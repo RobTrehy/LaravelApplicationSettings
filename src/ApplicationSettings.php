@@ -178,6 +178,6 @@ class ApplicationSettings
      */
     protected static function resetCache()
     {
-        Cache::forget(config('user-preferences.cache.prefix') . Auth::id() . config('user-preferences.cache.suffix'));
+        Cache::forget(config('application-settings.cache.key'));
     }
 }
