@@ -5,6 +5,7 @@ namespace RobTrehy\LaravelApplicationSettings;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Console\Exception\InvalidArgumentException;
 
 /**
@@ -57,10 +58,14 @@ class ApplicationSettings
     {
         self::$hasLoaded = true;
 
-        $settings = DB::table(config('application-settings.database.table'))
-            ->select([config('application-settings.database.key'),
-                      config('application-settings.database.value')])
-            ->get();
+        $settings = Cache::rememberForever(config('application-settings.cache.key'), function () {
+            return DB::table(config('application-settings.database.table'))
+                    ->select([
+                        config('application-settings.database.key'),
+                        config('application-settings.database.value')
+                    ])
+                    ->get();
+        });
 
         $data = [];
         foreach ($settings as $setting) {
@@ -149,9 +154,9 @@ class ApplicationSettings
     {
         foreach (self::$settings as $key => $value) {
             $exist = DB::table(config('application-settings.database.table'))
-                    ->select([config('application-settings.database.key')])
-                    ->where(config('application-settings.database.key'), $key)
-                    ->count();
+                ->select([config('application-settings.database.key')])
+                ->where(config('application-settings.database.key'), $key)
+                ->count();
             if ($exist) {
                 DB::table(config('application-settings.database.table'))
                     ->where(config('application-settings.database.key'), $key)
@@ -164,5 +169,15 @@ class ApplicationSettings
                     ]);
             }
         }
+
+        self::resetCache();
+    }
+
+    /**
+     * Clear cached data
+     */
+    protected static function resetCache()
+    {
+        Cache::forget(config('user-preferences.cache.prefix') . Auth::id() . config('user-preferences.cache.suffix'));
     }
 }

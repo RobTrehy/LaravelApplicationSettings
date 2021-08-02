@@ -5,5 +5,8 @@ return [
         'table' => 'settings',
         'key' => 'key',
         'value' => 'value'
+    ],
+    'cache' => [
+        'key' => 'application-settings'
     ]
 ];

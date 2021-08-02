@@ -30,12 +30,19 @@ to create the default configuration file.
 
 Set `table`, `key`, and `value` to match your requirements.
 
+Laravel Application Settings uses the Laravel Cache driver to reduce the number of queries on your database. By default Laravel Caches using the `file` driver. If you wish to disable this, you can use the `null` driver.
+The cache key supplied by Laravel Application Settings can be set by changing the `cache.key` configuration value.
+
+
 #### Example configuration
 ```PHP
     'database' => [
         'table' => 'settings',
         'key' => 'key',
         'value' => 'value'
+    ],
+    'cache' => [
+        'key' => 'application.settings'
     ]
 ```
 
