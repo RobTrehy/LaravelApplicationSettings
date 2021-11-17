@@ -2,11 +2,8 @@
 
 namespace RobTrehy\LaravelApplicationSettings;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Symfony\Component\Console\Exception\InvalidArgumentException;
 
 /**
  * Class ApplicationSettings
@@ -145,6 +142,8 @@ class ApplicationSettings
                 ->where(config('application-settings.database.key'), $key)
                 ->delete();
         }
+
+        self::resetCache();
     }
 
     /**
@@ -179,5 +178,6 @@ class ApplicationSettings
     protected static function resetCache()
     {
         Cache::forget(config('application-settings.cache.key'));
+        self::$hasLoaded = false;
     }
 }
