@@ -2,6 +2,10 @@
 
 All notable changes to `robtrehy/laravel-application-settings` will be documented in this file.
 
+## 1.1.2 - 2021-11-17
+- Fixed - Deleting a setting would not reset the cache
+- Security Updates
+  
 ## 1.1.1 - 2021-08-02
 - Fixed Cache support!
  
