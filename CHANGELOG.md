@@ -2,6 +2,10 @@
 
 All notable changes to `robtrehy/laravel-application-settings` will be documented in this file.
 
+## 2.0.0 - 2023-02-10
+- Dropped support for Laravel 8
+- Added support for Laravel 9
+
 ## 1.1.3 - 2022-03-30
 - Security Updates
 
