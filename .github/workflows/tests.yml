@@ -11,8 +11,8 @@ jobs:
             matrix:
                 php: [8.0, 8.1, 8.2]
                 include:
-                    -   laravel: 9.*
-                        testbench: 7.*
+                    -   laravel: ^9.2
+                        testbench: ^7.0
         steps:
             -   name: Checkout Code
                 uses: actions/checkout@v1
