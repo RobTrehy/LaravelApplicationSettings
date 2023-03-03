@@ -1,5 +1,5 @@
 # Laravel Application Settings
-![](https://img.shields.io/github/workflow/status/RobTrehy/LaravelApplicationSettings/Unit%20Tests?style=flat-square)
+![](https://img.shields.io/github/actions/workflow/status/RobTrehy/LaravelApplicationSettings/tests.yml?branch=main&style=flat-square)
 ![](https://img.shields.io/github/license/RobTrehy/LaravelApplicationSettings?style=flat-square)
 ![](https://img.shields.io/github/languages/code-size/RobTrehy/LaravelApplicationSettings?style=flat-square)
 ![](https://img.shields.io/packagist/v/robtrehy/laravel-application-settings?style=flat-square)
