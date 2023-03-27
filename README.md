@@ -62,6 +62,13 @@ Pass a second arguement to return a default value if the setting is not set, def
 ApplicationSettings::get(string [setting], string [default] = null);
 ```
 
+### Get multiple Settings
+Use this method to get the value of multiple settings for the application
+Pass a second arguement to return a default value if the setting is not set, defaults to `null`
+```PHP
+ApplicationSettings::get(array [setting], array [default] = null);
+```
+
 ### Get all Setting
 Use this method to get all of the applications's settings as an array
 ```PHP

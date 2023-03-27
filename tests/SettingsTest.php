@@ -19,6 +19,18 @@ class SettingsTest extends TestCase
     }
 
     /** @test */
+    public function testCanSetAndGetMutlipleSettings()
+    {
+        ApplicationSettings::set('test_key', 'test_value');
+        $values = ApplicationSettings::get(['test_key', 'test_key2']);
+
+        $this->assertCount(2, $values);
+        $this->assertArrayHasKey('test_key', $values);
+        $this->assertArrayHasKey('test_key2', $values);
+        $this->assertArrayNotHasKey('key_not_set', $values);
+    }
+
+    /** @test */
     public function testCanGetAllSettings()
     {
         ApplicationSettings::set('test_key', 'test_value');

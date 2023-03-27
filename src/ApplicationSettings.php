@@ -57,11 +57,11 @@ class ApplicationSettings
 
         $settings = Cache::rememberForever(config('application-settings.cache.key'), function () {
             return DB::table(config('application-settings.database.table'))
-                    ->select([
-                        config('application-settings.database.key'),
-                        config('application-settings.database.value')
-                    ])
-                    ->get();
+                ->select([
+                    config('application-settings.database.key'),
+                    config('application-settings.database.value')
+                ])
+                ->get();
         });
 
         $data = [];
@@ -79,13 +79,24 @@ class ApplicationSettings
      * This function will return the setting by its key.
      * If a value does not exist, the supplied default value will be returned
      *
-     * @param string $key
-     * @param string $default (optional)
+     * @param string|array $key
+     * @param string|array $default (optional)
      * @return mixed
      */
-    public static function get(string $key, string $default = null)
+    public static function get(string|array $key, string|array $default = null)
     {
         self::settingsLoaded();
+
+        if (is_array($key)) {
+            foreach ($key as $_key) {
+                if (self::has($_key)) {
+                    $settings[$_key] = self::$settings->get($_key);
+                } else {
+                    $settings[$_key] = $default[$_key];
+                }
+            }
+            return $settings;
+        }
 
         if (self::has($key)) {
             return self::$settings->get($key);
