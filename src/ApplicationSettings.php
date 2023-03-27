@@ -92,7 +92,7 @@ class ApplicationSettings
                 if (self::has($_key)) {
                     $settings[$_key] = self::$settings->get($_key);
                 } else {
-                    $settings[$_key] = $default[$_key];
+                    $settings[$_key] = array_key_exists($_key, $default) ? $default[$_key] : null;
                 }
             }
             return $settings;
