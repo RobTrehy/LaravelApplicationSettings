@@ -2,6 +2,9 @@
 
 All notable changes to `robtrehy/laravel-application-settings` will be documented in this file.
 
+## 3.0.0 - 2024-03-18
+- Added support for Laravel 11
+
 ## 2.0.2 - 2023-03-27
 - ApplicationSettings::get() now supports getting multiple keys
 
