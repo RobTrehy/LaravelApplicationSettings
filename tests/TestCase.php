@@ -13,7 +13,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn(string $modelName) => 'RobTrehy\\LaravelApplicationSettings\\Test\\Database\\Factories\\' . class_basename($modelName) . 'Factory'
+            fn (string $modelName) => 'RobTrehy\\LaravelApplicationSettings\\Test\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 
@@ -26,7 +26,7 @@ class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations()
     {
-        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
     }
 
     public function getEnvironmentSetUp($app)

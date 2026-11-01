@@ -16,10 +16,9 @@ class ApplicationSettingsServiceProvider extends PackageServiceProvider
             ->hasMigration('create_settings_table');
     }
 
-
     public function packageRegistered(): void
     {
-        $this->app->singleton('application-settings', fn() => new ApplicationSettings());
+        $this->app->singleton('application-settings', fn () => new ApplicationSettings);
 
         $this->app->alias('application-settings', ApplicationSettings::class);
     }
