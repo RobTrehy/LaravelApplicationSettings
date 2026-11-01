@@ -1,25 +1,35 @@
 # Laravel Application Settings
-![](https://img.shields.io/github/actions/workflow/status/RobTrehy/LaravelApplicationSettings/tests.yml?branch=master&style=flat-square)
-![](https://img.shields.io/github/license/RobTrehy/LaravelApplicationSettings?style=flat-square)
-![](https://img.shields.io/github/languages/code-size/RobTrehy/LaravelApplicationSettings?style=flat-square)
-![](https://img.shields.io/packagist/v/robtrehy/laravel-application-settings?style=flat-square)
-![](https://img.shields.io/packagist/dt/robtrehy/laravel-application-settings?style=flat-square)
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/robtrehy/laravel-application-settings.svg?style=flat-square)](https://packagist.org/packages/robtrehy/laravel-application-settings)
+[![GitHub Tests Action Status](https://github.com/robtrehy/laravel-application-settings/actions/workflows/run-tests.yml/badge.svg)](https://github.com/robtrehy/laravel-application-settings/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://github.com/robtrehy/laravel-application-settings/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/robtrehy/laravel-application-settings/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/robtrehy/laravel-application-settings.svg?style=flat-square)](https://packagist.org/packages/robtrehy/laravel-application-settings)
 
 This is a package for Laravel that can be used to store and access settings for your application.
 The settings are stored in a single database table. The default configuration stores this in a `settings` table.
 
 ## Installation
-1. Run `composer require robtrehy/laravel-application-settings` to include this in your project.
-2. Publish the config file with the following command
-    ```
-    php artisan vendor:publish --provider="RobTrehy\LaravelApplicationSettings\ApplicationSettingsServiceProvider" --tag="config"
-    ```
-4. Modify the published configuration file to your requirements. The file is located at `config/application-settings.php`.
-5. Add the `settings` table to the database. A migration file is included, just run the following command
-    ```
-    php artisan vendor:publish --provider="RobTrehy\LaravelApplicationSettings\ApplicationSettingsServiceProvider" --tag="migrations" && php artisan migrate
-    ```
-    This will add the table defined in your configuration file to your database.
+
+You can install the package via composer:
+
+```bash
+composer require robtrehy/laravel-application-settings
+```
+
+You can publish the config file with:
+
+```bash
+php artisan vendor:publish --tag="laravel-application-settings-config"
+```
+
+You can publish and run the migrations with:
+
+```bash
+php artisan vendor:publish --tag="laravel-application-settings-migrations"
+php artisan migrate
+```
+
+This will add the table defined in your configuration file to your database.
     
 ## Configuration
 Open `config/application-settings.php` to adjust the packages configuration. 
