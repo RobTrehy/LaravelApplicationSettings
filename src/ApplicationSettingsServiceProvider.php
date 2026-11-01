@@ -5,7 +5,7 @@ namespace RobTrehy\LaravelApplicationSettings;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class LaravelApplicationSettingsServiceProvider extends PackageServiceProvider
+class ApplicationSettingsServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
