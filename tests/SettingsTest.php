@@ -10,7 +10,7 @@ class SettingsTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function testCanSetAndGetASetting()
+    public function test_can_set_and_get_a_setting()
     {
         ApplicationSettings::set('test_key', 'test_value');
         $value = ApplicationSettings::get('test_key');
@@ -19,7 +19,7 @@ class SettingsTest extends TestCase
     }
 
     /** @test */
-    public function testCanSetAndGetMutlipleSettings()
+    public function test_can_set_and_get_mutliple_settings()
     {
         ApplicationSettings::set('test_key', 'test_value');
         $values = ApplicationSettings::get(['test_key', 'test_key2']);
@@ -31,7 +31,7 @@ class SettingsTest extends TestCase
     }
 
     /** @test */
-    public function testCanGetAllSettings()
+    public function test_can_get_all_settings()
     {
         ApplicationSettings::set('test_key', 'test_value');
         ApplicationSettings::set('test_key2', 'test_value2');
@@ -46,7 +46,7 @@ class SettingsTest extends TestCase
     }
 
     /** @test */
-    public function testCanCheckIfSettingIsNotSet()
+    public function test_can_check_if_setting_is_not_set()
     {
         $value = ApplicationSettings::has('key_not_set');
 
@@ -55,7 +55,7 @@ class SettingsTest extends TestCase
     }
 
     /** @test */
-    public function testCanCheckIfSettingIsSet()
+    public function test_can_check_if_setting_is_set()
     {
         ApplicationSettings::set('key_set', 'some_value');
         $value = ApplicationSettings::has('key_set');
@@ -65,7 +65,7 @@ class SettingsTest extends TestCase
     }
 
     /** @test */
-    public function testCanDeleteASetting()
+    public function test_can_delete_a_setting()
     {
         ApplicationSettings::set('key_set', 'some_value');
         ApplicationSettings::delete('key_set');

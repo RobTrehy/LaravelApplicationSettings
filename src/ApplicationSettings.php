@@ -2,15 +2,13 @@
 
 namespace RobTrehy\LaravelApplicationSettings;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class ApplicationSettings
  *
  * This class handles the settings for the application.
- *
- * @package RobTrehy\LaravelApplicationSettings
  */
 class ApplicationSettings
 {
@@ -26,16 +24,12 @@ class ApplicationSettings
     /**
      * ApplicationSettings Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * ApplicationSettings destructor
      */
-    public function __destruct()
-    {
-    }
+    public function __destruct() {}
 
     /**
      * Check for settings, load if not
@@ -59,7 +53,7 @@ class ApplicationSettings
             return DB::table(config('application-settings.database.table'))
                 ->select([
                     config('application-settings.database.key'),
-                    config('application-settings.database.value')
+                    config('application-settings.database.value'),
                 ])
                 ->get();
         });
@@ -79,11 +73,10 @@ class ApplicationSettings
      * This function will return the setting by its key.
      * If a value does not exist, the supplied default value will be returned
      *
-     * @param string|array $key
-     * @param string|array $default (optional)
+     * @param  string|array  $default  (optional)
      * @return mixed
      */
-    public static function get(string|array $key, string|array $default = null)
+    public static function get(string|array $key, string|array|null $default = null)
     {
         self::settingsLoaded();
 
@@ -96,6 +89,7 @@ class ApplicationSettings
                         ? $default[$_key] : null;
                 }
             }
+
             return $settings;
         }
 
@@ -109,8 +103,7 @@ class ApplicationSettings
     /**
      * Set the setting by key
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  mixed  $value
      */
     public static function set(string $key, $value)
     {
@@ -122,12 +115,12 @@ class ApplicationSettings
     /**
      * Returns true if setting exists
      *
-     * @param string $key
      * @return bool
      */
     public static function has(string $key)
     {
         self::settingsLoaded();
+
         return self::$settings->has($key);
     }
 
@@ -139,6 +132,7 @@ class ApplicationSettings
     public static function all()
     {
         self::settingsLoaded();
+
         return self::$settings->toArray();
     }
 
@@ -176,7 +170,7 @@ class ApplicationSettings
                 DB::table(config('application-settings.database.table'))
                     ->insert([
                         config('application-settings.database.key') => $key,
-                        config('application-settings.database.value') => $value
+                        config('application-settings.database.value') => $value,
                     ]);
             }
         }

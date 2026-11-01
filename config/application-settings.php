@@ -4,9 +4,9 @@ return [
     'database' => [
         'table' => 'settings',
         'key' => 'key',
-        'value' => 'value'
+        'value' => 'value',
     ],
     'cache' => [
-        'key' => 'application-settings'
-    ]
+        'key' => 'application-settings',
+    ],
 ];

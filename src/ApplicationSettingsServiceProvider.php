@@ -16,14 +16,13 @@ class ApplicationSettingsServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             // Export the config
             $this->publishes([
-                __DIR__ . '/config/application-settings.php' => config_path('application-settings.php'),
+                __DIR__.'/config/application-settings.php' => config_path('application-settings.php'),
             ], 'config');
 
             // Export the migration
             if (! class_exists('CreateSettingsTable')) {
                 $this->publishes([
-                    __DIR__ . '/database/migrations/create_settings_table.php.stub'
-                    => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_settings_table.php'),
+                    __DIR__.'/database/migrations/create_settings_table.php.stub' => database_path('migrations/'.date('Y_m_d_His', time()).'_create_settings_table.php'),
                 ], 'migrations');
             }
         }
@@ -37,7 +36,7 @@ class ApplicationSettingsServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(ApplicationSettings::class, function () {
-            return new ApplicationSettings();
+            return new ApplicationSettings;
         });
 
         $this->app->alias(ApplicationSettings::class, 'application-settings');

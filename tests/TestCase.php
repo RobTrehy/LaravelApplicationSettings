@@ -2,6 +2,7 @@
 
 namespace RobTrehy\LaravelApplicationSettings\Tests;
 
+use Illuminate\Foundation\Application;
 use RobTrehy\LaravelApplicationSettings\ApplicationSettingsServiceProvider;
 
 class TestCase extends \Orchestra\Testbench\TestCase
@@ -9,8 +10,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Get package providers.
      *
-     * @param  \Illuminate\Foundation\Application  $app
-     *
+     * @param  Application  $app
      * @return array
      */
     protected function getPackageProviders($app)
@@ -23,14 +23,13 @@ class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Override application aliases.
      *
-     * @param  \Illuminate\Foundation\Application  $app
-     *
+     * @param  Application  $app
      * @return array
      */
     protected function overrideApplicationProviders($app)
     {
         return [
-        'ApplicationSettings' => 'RobTrehy\LaravelApplicationSettings\ApplicationSettingsFacade',
+            'ApplicationSettings' => 'RobTrehy\LaravelApplicationSettings\ApplicationSettingsFacade',
         ];
     }
 
@@ -51,6 +50,6 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function defineDatabaseMigrations()
     {
-        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
     }
 }
