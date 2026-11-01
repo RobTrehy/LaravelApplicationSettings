@@ -90,7 +90,7 @@ class ApplicationSettings
                 }
             }
 
-            return $settings;
+            return $settings ?? "";
         }
 
         if (self::has($key)) {
