@@ -1,9 +1,19 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use RobTrehy\LaravelApplicationSettings\ApplicationSettings;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    foreach (['settings', 'hasLoaded'] as $property) {
+        $reflection = new ReflectionProperty(ApplicationSettings::class, $property);
+        $reflection->setValue(null, null);
+    }
+
+    Cache::forget(config('application-settings.cache.key'));
+});
 
 it('can set and get a setting', function () {
     ApplicationSettings::set('test_key', 'test_value');
