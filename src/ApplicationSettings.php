@@ -109,7 +109,7 @@ class ApplicationSettings
     {
         self::settingsLoaded();
         self::$settings->put($key, $value);
-        self::save();
+        self::save($key);
     }
 
     /**
@@ -153,15 +153,16 @@ class ApplicationSettings
     }
 
     /**
-     * Save all settings to database
+     * Save a setting, or all settings when no key is supplied
      */
-    protected static function save()
+    protected static function save(?string $key = null)
     {
-        foreach (self::$settings as $key => $value) {
+        $settings = $key === null ? self::$settings : [$key => self::$settings->get($key)];
+
+        foreach ($settings as $key => $value) {
             $exist = DB::table(config('application-settings.database.table'))
-                ->select([config('application-settings.database.key')])
                 ->where(config('application-settings.database.key'), $key)
-                ->count();
+                ->exists();
             if ($exist) {
                 DB::table(config('application-settings.database.table'))
                     ->where(config('application-settings.database.key'), $key)
