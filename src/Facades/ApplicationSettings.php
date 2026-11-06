@@ -3,15 +3,14 @@
 namespace RobTrehy\LaravelApplicationSettings\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use RobTrehy\LaravelApplicationSettings\ApplicationSettings;
 
 /**
  * @see ApplicationSettings
  */
-class LaravelApplicationSettings extends Facade
+class ApplicationSettings extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return ApplicationSettings::class;
+        return \RobTrehy\LaravelApplicationSettings\ApplicationSettings::class;
     }
 }

@@ -63,7 +63,7 @@
                 "RobTrehy\\LaravelApplicationSettings\\ApplicationSettingsServiceProvider"
             ],
             "aliases": {
-                "LaravelApplicationSettings": "RobTrehy\\LaravelApplicationSettings\\Facades\\ApplicationSettings"
+                "ApplicationSettings": "RobTrehy\\LaravelApplicationSettings\\Facades\\ApplicationSettings"
             }
         }
     },
