@@ -2,46 +2,38 @@
 
 namespace RobTrehy\LaravelApplicationSettings;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Queue\Events\JobProcessing;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class ApplicationSettingsServiceProvider extends ServiceProvider
+class ApplicationSettingsServiceProvider extends PackageServiceProvider
 {
-    /**
-     * Perform post-registration booting of services.
-     *
-     * @return void
-     */
-    public function boot()
+    public function configurePackage(Package $package): void
     {
-        if ($this->app->runningInConsole()) {
-            // Export the config
-            $this->publishes([
-                __DIR__ . '/config/application-settings.php' => config_path('application-settings.php'),
-            ], 'config');
-
-            // Export the migration
-            if (! class_exists('CreateSettingsTable')) {
-                $this->publishes([
-                    __DIR__ . '/database/migrations/create_settings_table.php.stub'
-                    => database_path('migrations/' . date('Y_m_d_His', time()) . '_create_settings_table.php'),
-                ], 'migrations');
-            }
-        }
+        $package
+            ->name('laravel-application-settings')
+            ->hasConfigFile('application-settings')
+            ->hasMigration('create_settings_table');
     }
 
-    /**
-     * Register the application services.
-     *
-     * @return void
-     */
-    public function register()
+    public function packageRegistered(): void
     {
-        $this->app->singleton(ApplicationSettings::class, function () {
-            return new ApplicationSettings();
+        $this->app->singleton('application-settings', fn () => new ApplicationSettings);
+
+        $this->app->alias('application-settings', ApplicationSettings::class);
+    }
+
+    public function packageBooted(): void
+    {
+        $this->app->make(Dispatcher::class)->listen([
+            JobProcessing::class,
+            // Register optional Octane events by name without requiring Octane.
+            'Laravel\Octane\Events\RequestReceived',
+            'Laravel\Octane\Events\TaskReceived',
+            'Laravel\Octane\Events\TickReceived',
+        ], static function (): void {
+            ApplicationSettings::refresh();
         });
-
-        $this->app->alias(ApplicationSettings::class, 'application-settings');
-
-        $this->mergeConfigFrom(__DIR__.'/config/application-settings.php', 'application-settings');
     }
 }

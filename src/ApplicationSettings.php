@@ -2,22 +2,21 @@
 
 namespace RobTrehy\LaravelApplicationSettings;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Class ApplicationSettings
  *
  * This class handles the settings for the application.
- *
- * @package RobTrehy\LaravelApplicationSettings
  */
 class ApplicationSettings
 {
     /**
      * The cache of the Applications Settings
      *
-     * @var object
+     * @var object|null
      */
     protected static $settings;
 
@@ -26,23 +25,19 @@ class ApplicationSettings
     /**
      * ApplicationSettings Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * ApplicationSettings destructor
      */
-    public function __destruct()
-    {
-    }
+    public function __destruct() {}
 
     /**
      * Check for settings, load if not
      */
     protected static function settingsLoaded()
     {
-        if (self::$hasLoaded) {
+        if (self::$hasLoaded && DB::connection()->transactionLevel() === 0) {
             return;
         }
         self::getSettings();
@@ -53,24 +48,28 @@ class ApplicationSettings
      */
     protected static function getSettings()
     {
-        self::$hasLoaded = true;
+        $keyColumn = config('application-settings.database.key');
+        $valueColumn = config('application-settings.database.value');
 
-        $settings = Cache::rememberForever(config('application-settings.cache.key'), function () {
+        $inTransaction = DB::connection()->transactionLevel() > 0;
+        $load = function () use ($keyColumn, $valueColumn) {
             return DB::table(config('application-settings.database.table'))
-                ->select([
-                    config('application-settings.database.key'),
-                    config('application-settings.database.value')
-                ])
+                ->select([$keyColumn, $valueColumn])
                 ->get();
-        });
+        };
+
+        $settings = $inTransaction
+            ? $load()
+            : Cache::rememberForever(config('application-settings.cache.key'), $load);
 
         $data = [];
         foreach ($settings as $setting) {
-            $data[$setting->{config('application-settings.database.key')}]
-                = $setting->{config('application-settings.database.value')};
+            $data[$setting->{$keyColumn}] = $setting->{$valueColumn};
         }
 
         self::$settings = collect($data);
+        // Transactional snapshots must not survive a commit or rollback.
+        self::$hasLoaded = ! $inTransaction;
     }
 
     /**
@@ -79,27 +78,29 @@ class ApplicationSettings
      * This function will return the setting by its key.
      * If a value does not exist, the supplied default value will be returned
      *
-     * @param string|array $key
-     * @param string|array $default (optional)
+     * @param  string|array  $default  (optional)
      * @return mixed
      */
-    public static function get(string|array $key, string|array $default = null)
+    public static function get(string|array $key, string|array|null $default = null)
     {
         self::settingsLoaded();
 
         if (is_array($key)) {
+            $defaults = is_array($default) ? $default : [];
+
             foreach ($key as $_key) {
-                if (self::has($_key)) {
+                if (self::$settings->has($_key)) {
                     $settings[$_key] = self::$settings->get($_key);
                 } else {
-                    $settings[$_key] = array_key_exists($_key, is_array($default) ? $default : [])
-                        ? $default[$_key] : null;
+                    $settings[$_key] = array_key_exists($_key, $defaults)
+                        ? $defaults[$_key] : null;
                 }
             }
-            return $settings;
+
+            return $settings ?? '';
         }
 
-        if (self::has($key)) {
+        if (self::$settings->has($key)) {
             return self::$settings->get($key);
         } else {
             return $default;
@@ -109,37 +110,53 @@ class ApplicationSettings
     /**
      * Set the setting by key
      *
-     * @param string $key
-     * @param mixed $value
+     * @param  mixed  $value
      */
     public static function set(string $key, $value)
     {
         self::settingsLoaded();
         self::$settings->put($key, $value);
-        self::save();
+
+        try {
+            self::save($key);
+        } catch (Throwable $exception) {
+            self::refresh();
+
+            throw $exception;
+        }
     }
 
     /**
      * Returns true if setting exists
      *
-     * @param string $key
      * @return bool
      */
     public static function has(string $key)
     {
         self::settingsLoaded();
+
         return self::$settings->has($key);
     }
 
     /**
      * Returns all settings as an array
      *
-     * @return object
+     * @return array
      */
     public static function all()
     {
         self::settingsLoaded();
+
         return self::$settings->toArray();
+    }
+
+    /**
+     * Discard in-process settings so the next access reloads from the shared cache.
+     */
+    public static function refresh(): void
+    {
+        self::$settings = null;
+        self::$hasLoaded = false;
     }
 
     /**
@@ -147,27 +164,30 @@ class ApplicationSettings
      */
     public static function delete(string $key)
     {
-        self::settingsLoaded();
-        if (self::has($key)) {
-            self::$settings->pull($key);
+        try {
             DB::table(config('application-settings.database.table'))
                 ->where(config('application-settings.database.key'), $key)
                 ->delete();
-        }
 
-        self::resetCache();
+            self::resetCache();
+        } catch (Throwable $exception) {
+            self::refresh();
+
+            throw $exception;
+        }
     }
 
     /**
-     * Save all settings to database
+     * Save a setting, or all settings when no key is supplied
      */
-    protected static function save()
+    protected static function save(?string $key = null)
     {
-        foreach (self::$settings as $key => $value) {
+        $settings = $key === null ? self::$settings : [$key => self::$settings->get($key)];
+
+        foreach ($settings as $key => $value) {
             $exist = DB::table(config('application-settings.database.table'))
-                ->select([config('application-settings.database.key')])
                 ->where(config('application-settings.database.key'), $key)
-                ->count();
+                ->exists();
             if ($exist) {
                 DB::table(config('application-settings.database.table'))
                     ->where(config('application-settings.database.key'), $key)
@@ -176,7 +196,7 @@ class ApplicationSettings
                 DB::table(config('application-settings.database.table'))
                     ->insert([
                         config('application-settings.database.key') => $key,
-                        config('application-settings.database.value') => $value
+                        config('application-settings.database.value') => $value,
                     ]);
             }
         }
@@ -189,7 +209,19 @@ class ApplicationSettings
      */
     protected static function resetCache()
     {
-        Cache::forget(config('application-settings.cache.key'));
-        self::$hasLoaded = false;
+        $cache = Cache::store();
+        $key = config('application-settings.cache.key');
+
+        self::refresh();
+        $cache->forget($key);
+
+        $connection = DB::connection();
+        if ($connection->transactionLevel() > 0) {
+            // Another process may cache the old committed rows before this commit.
+            $connection->afterCommit(static function () use ($cache, $key): void {
+                self::refresh();
+                $cache->forget($key);
+            });
+        }
     }
 }
