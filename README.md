@@ -19,13 +19,13 @@ composer require robtrehy/laravel-application-settings
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-application-settings-config"
+php artisan vendor:publish --tag="application-settings-config"
 ```
 
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-application-settings-migrations"
+php artisan vendor:publish --tag="application-settings-migrations"
 php artisan migrate
 ```
 
