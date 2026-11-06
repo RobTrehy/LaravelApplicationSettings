@@ -47,19 +47,18 @@ class ApplicationSettings
      */
     protected static function getSettings()
     {
-        $settings = Cache::rememberForever(config('application-settings.cache.key'), function () {
+        $keyColumn = config('application-settings.database.key');
+        $valueColumn = config('application-settings.database.value');
+
+        $settings = Cache::rememberForever(config('application-settings.cache.key'), function () use ($keyColumn, $valueColumn) {
             return DB::table(config('application-settings.database.table'))
-                ->select([
-                    config('application-settings.database.key'),
-                    config('application-settings.database.value'),
-                ])
+                ->select([$keyColumn, $valueColumn])
                 ->get();
         });
 
         $data = [];
         foreach ($settings as $setting) {
-            $data[$setting->{config('application-settings.database.key')}]
-                = $setting->{config('application-settings.database.value')};
+            $data[$setting->{$keyColumn}] = $setting->{$valueColumn};
         }
 
         self::$settings = collect($data);
@@ -80,19 +79,21 @@ class ApplicationSettings
         self::settingsLoaded();
 
         if (is_array($key)) {
+            $defaults = is_array($default) ? $default : [];
+
             foreach ($key as $_key) {
-                if (self::has($_key)) {
+                if (self::$settings->has($_key)) {
                     $settings[$_key] = self::$settings->get($_key);
                 } else {
-                    $settings[$_key] = array_key_exists($_key, is_array($default) ? $default : [])
-                        ? $default[$_key] : null;
+                    $settings[$_key] = array_key_exists($_key, $defaults)
+                        ? $defaults[$_key] : null;
                 }
             }
 
             return $settings ?? '';
         }
 
-        if (self::has($key)) {
+        if (self::$settings->has($key)) {
             return self::$settings->get($key);
         } else {
             return $default;

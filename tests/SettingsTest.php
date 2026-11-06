@@ -93,7 +93,7 @@ it('can retry loading settings after a database failure', function () {
     config()->set('application-settings.database.table', 'missing_settings_table');
 
     try {
-        expect(fn() => ApplicationSettings::get('test_key'))->toThrow(QueryException::class);
+        expect(fn () => ApplicationSettings::get('test_key'))->toThrow(QueryException::class);
     } finally {
         config()->set('application-settings.database.table', $table);
     }
@@ -109,6 +109,43 @@ it('can set and get multiple settings', function () {
         ->toHaveCount(2)
         ->toHaveKeys(['test_key', 'test_key2'])
         ->not->toHaveKey('key_not_set');
+});
+
+it('preserves literal keys and defaults when reading multiple settings', function () {
+    DB::table('settings')->insert([
+        ['key' => 'site.name', 'value' => 'Example'],
+        ['key' => 'empty', 'value' => ''],
+        ['key' => 'nullable', 'value' => null],
+    ]);
+
+    expect(ApplicationSettings::get(
+        ['site.name', 'empty', 'nullable', 'missing', 'without_default'],
+        ['site.name' => 'ignored', 'empty' => 'ignored', 'nullable' => 'ignored', 'missing' => 'fallback'],
+    ))->toBe([
+        'site.name' => 'Example',
+        'empty' => '',
+        'nullable' => null,
+        'missing' => 'fallback',
+        'without_default' => null,
+    ]);
+
+    expect(ApplicationSettings::get('nullable', 'fallback'))->toBeNull();
+    expect(ApplicationSettings::get('missing', 'fallback'))->toBe('fallback');
+    expect(ApplicationSettings::get(['missing'], 'fallback'))->toBe(['missing' => null]);
+    expect(ApplicationSettings::get([]))->toBe('');
+});
+
+it('reads existing cached rows using configured column names', function () {
+    config()->set('application-settings.database.key', 'setting_name');
+    config()->set('application-settings.database.value', 'setting_value');
+    config()->set('application-settings.database.table', 'missing_settings_table');
+
+    Cache::forever(config('application-settings.cache.key'), collect([
+        (object) ['setting_name' => 'site.name', 'setting_value' => 'Cached'],
+    ]));
+
+    expect(ApplicationSettings::get('site.name'))->toBe('Cached');
+    expect(ApplicationSettings::all())->toBe(['site.name' => 'Cached']);
 });
 
 it('can get all settings', function () {
@@ -147,7 +184,7 @@ it('can delete a setting', function () {
 
 it('persists a setting with two queries regardless of the number of settings', function (int $count, string $key) {
     DB::table('settings')->insert(array_map(
-        fn(int $index) => ['key' => 'key_' . $index, 'value' => 'original'],
+        fn (int $index) => ['key' => 'key_'.$index, 'value' => 'original'],
         range(1, $count),
     ));
 
