@@ -11,7 +11,7 @@ class ApplicationSettingsServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-application-settings')
-            ->hasConfigFile()
+            ->hasConfigFile('application-settings')
             ->hasMigration('create_settings_table');
     }
 
