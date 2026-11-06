@@ -115,8 +115,12 @@ it('preserves literal keys and defaults when reading multiple settings', functio
     DB::table('settings')->insert([
         ['key' => 'site.name', 'value' => 'Example'],
         ['key' => 'empty', 'value' => ''],
-        ['key' => 'nullable', 'value' => null],
     ]);
+
+    // Existing installations may allow nulls even though the published schema does not.
+    Cache::forever(config('application-settings.cache.key'), DB::table('settings')->get()->push(
+        (object) ['key' => 'nullable', 'value' => null],
+    ));
 
     expect(ApplicationSettings::get(
         ['site.name', 'empty', 'nullable', 'missing', 'without_default'],
