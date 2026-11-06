@@ -141,7 +141,7 @@ class ApplicationSettings
     /**
      * Returns all settings as an array
      *
-     * @return object
+     * @return array
      */
     public static function all()
     {

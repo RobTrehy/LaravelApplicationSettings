@@ -5,7 +5,7 @@ namespace RobTrehy\LaravelApplicationSettings\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see ApplicationSettings
+ * @see \RobTrehy\LaravelApplicationSettings\ApplicationSettings
  */
 class ApplicationSettings extends Facade
 {

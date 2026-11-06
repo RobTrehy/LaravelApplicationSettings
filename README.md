@@ -40,67 +40,98 @@ to create the default configuration file.
 
 Set `table`, `key`, and `value` to match your requirements.
 
-Laravel Application Settings uses the Laravel Cache driver to reduce the number of queries on your database. By default Laravel Caches using the `file` driver. If you wish to disable this, you can use the `null` driver.
+Laravel Application Settings uses your application's configured Laravel cache store to reduce the number of queries on your database. To disable shared caching, you can use the `null` driver.
 The cache key supplied by Laravel Application Settings can be set by changing the `cache.key` configuration value.
 
 
 #### Example configuration
-```PHP
+```php
+return [
     'database' => [
         'table' => 'settings',
         'key' => 'key',
-        'value' => 'value'
+        'value' => 'value',
     ],
     'cache' => [
-        'key' => 'application.settings'
-    ]
+        'key' => 'application-settings',
+    ],
+];
 ```
 
 ## Usage
 
-### Set a Setting
-Use this method to set a setting for the application
-```PHP
-ApplicationSettings::set(string [setting], [value]);
+Import the settings class in the PHP file where you use these examples:
+
+```php
+use RobTrehy\LaravelApplicationSettings\ApplicationSettings;
 ```
-The setting will be immediately saved to the database
+
+### Set a Setting
+
+```php
+ApplicationSettings::set('site_name', 'My application');
+```
+
+The setting is saved to the database immediately.
 
 ### Get a Setting
-Use this method to get the value of a setting for the application
-Pass a second arguement to return a default value if the setting is not set, defaults to `null`
-```PHP
-ApplicationSettings::get(string [setting], string [default] = null);
+
+Pass a second argument to supply a default for a missing setting. Without a default, a missing setting returns `null`.
+
+```php
+$siteName = ApplicationSettings::get('site_name', 'Default application');
 ```
 
 ### Get multiple Settings
-Use this method to get the value of multiple settings for the application
-Pass a second arguement to return a default value if the setting is not set, defaults to `null`
-```PHP
-ApplicationSettings::get(array [setting], array [default] = null);
+
+Supply an array of keys and an optional array of defaults keyed by setting name. Missing settings without a matching default return `null`.
+
+```php
+$settings = ApplicationSettings::get(
+    ['site_name', 'support_email'],
+    ['site_name' => 'Default application', 'support_email' => 'support@example.com'],
+);
 ```
 
 ### Get all Setting
-Use this method to get all of the applications's settings as an array
-```PHP
-ApplicationSettings::all()
+
+Get all application settings as an array keyed by setting name:
+
+```php
+$settings = ApplicationSettings::all();
 ```
 
 ### Check if an Application Setting is set
-To check if the application has a specific setting set, you can call
-```PHP
-ApplicationSettings::has(string [setting]);
+```php
+$hasSiteName = ApplicationSettings::has('site_name');
 ```
-This will return `true` if a value was found, `false` if not.
+
+Returns `true` if the key exists, otherwise `false`.
 
 ### Save a Setting
 All settings are saved automatically when `ApplicationSettings::set();` is called.
 
 ### Delete a Setting
-To delete a setting, you can call
-```PHP
-ApplicationSettings::delete(string [setting]);
+```php
+ApplicationSettings::delete('site_name');
 ```
 There will be no return from this call.
+
+### Stored value types
+
+The published migration stores values in a non-nullable `text` column. Use strings for predictable round trips. The package does not automatically encode arrays or objects as JSON, or cast stored values back to booleans, integers, or other PHP types.
+
+Encode and decode structured values explicitly:
+
+```php
+ApplicationSettings::set('navigation', json_encode(['home', 'contact'], JSON_THROW_ON_ERROR));
+
+$navigation = json_decode(
+    ApplicationSettings::get('navigation', '[]'),
+    true,
+    flags: JSON_THROW_ON_ERROR,
+);
+```
 
 ### Refresh settings in long-running processes
 
