@@ -114,6 +114,12 @@ ApplicationSettings::refresh();
 
 This method clears only the in-process settings and reloads lazily on the next access. It does not invalidate the shared cache. Changes made through `set()` and `delete()` continue to invalidate the shared cache automatically. If you change the database directly, also forget the configured cache key.
 
+### Database transactions
+
+Inside a transaction on the settings database connection, reads bypass the shared cache and reload from the database on each access. This allows reads to see changes within the transaction without caching uncommitted values. Transactional snapshots are discarded after the transaction ends.
+
+Writes and deletions invalidate the shared cache immediately and again after the outermost transaction commits, so an older value cached by another process before commit is invalidated. Rolled-back changes are not published to the shared cache.
+
 ## Changelog
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
 

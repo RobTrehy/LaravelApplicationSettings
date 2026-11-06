@@ -2,14 +2,13 @@
 
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use RobTrehy\LaravelApplicationSettings\ApplicationSettings;
 
-uses(RefreshDatabase::class);
+// Testbench runs the package migration for each test without a wrapping transaction.
 
 beforeEach(function () {
     foreach (['settings', 'hasLoaded'] as $property) {
@@ -25,6 +24,136 @@ it('can set and get a setting', function () {
     $value = ApplicationSettings::get('test_key');
 
     expect($value)->toBe('test_value');
+});
+
+it('bypasses cached snapshots during transactions without caching uncommitted reads', function (bool $warmCache) {
+    DB::table('settings')->insert(['key' => 'test_key', 'value' => 'committed']);
+    if ($warmCache) {
+        expect(ApplicationSettings::get('test_key'))->toBe('committed');
+    }
+
+    DB::beginTransaction();
+    try {
+        DB::table('settings')->where('key', 'test_key')->update(['value' => 'uncommitted']);
+        expect(ApplicationSettings::get('test_key'))->toBe('uncommitted');
+        DB::table('settings')->where('key', 'test_key')->update(['value' => 'changed again']);
+        expect(ApplicationSettings::get('test_key'))->toBe('changed again');
+
+        $cached = Cache::get(config('application-settings.cache.key'));
+        if ($warmCache) {
+            expect($cached->first()->value)->toBe('committed');
+        } else {
+            expect($cached)->toBeNull();
+        }
+    } finally {
+        DB::rollBack();
+    }
+
+    expect(ApplicationSettings::get('test_key'))->toBe('committed');
+})->with([false, true]);
+
+it('invalidates values cached before a transaction commits', function (string $operation) {
+    ApplicationSettings::set('test_key', 'original');
+    ApplicationSettings::get('test_key');
+
+    DB::beginTransaction();
+    try {
+        if ($operation === 'set') {
+            ApplicationSettings::set('test_key', 'updated');
+            expect(ApplicationSettings::get('test_key'))->toBe('updated');
+        } else {
+            ApplicationSettings::delete('test_key');
+            expect(ApplicationSettings::has('test_key'))->toBeFalse();
+        }
+
+        expect(Cache::has(config('application-settings.cache.key')))->toBeFalse();
+
+        // Simulate another process caching the previously committed value.
+        Cache::forever(config('application-settings.cache.key'), collect([
+            (object) ['key' => 'test_key', 'value' => 'original'],
+        ]));
+        DB::commit();
+    } finally {
+        if (DB::transactionLevel() > 0) {
+            DB::rollBack();
+        }
+    }
+
+    expect(Cache::has(config('application-settings.cache.key')))->toBeFalse();
+    expect(ApplicationSettings::get('test_key'))->toBe($operation === 'set' ? 'updated' : null);
+})->with(['set', 'delete']);
+
+it('restores committed values after rolling back setting changes', function (string $operation) {
+    ApplicationSettings::set('test_key', 'original');
+
+    DB::beginTransaction();
+    try {
+        if ($operation === 'set') {
+            ApplicationSettings::set('test_key', 'updated');
+            expect(ApplicationSettings::get('test_key'))->toBe('updated');
+        } else {
+            ApplicationSettings::delete('test_key');
+            expect(ApplicationSettings::has('test_key'))->toBeFalse();
+        }
+
+        expect(Cache::has(config('application-settings.cache.key')))->toBeFalse();
+    } finally {
+        DB::rollBack();
+    }
+
+    expect(ApplicationSettings::get('test_key'))->toBe('original');
+})->with(['set', 'delete']);
+
+it('defers invalidation until the outermost commit and discards rolled-back callbacks', function () {
+    ApplicationSettings::set('test_key', 'original');
+    DB::beginTransaction();
+
+    try {
+        ApplicationSettings::set('test_key', 'outer');
+        DB::beginTransaction();
+        ApplicationSettings::set('test_key', 'inner');
+        DB::rollBack();
+        expect(ApplicationSettings::get('test_key'))->toBe('outer');
+
+        DB::beginTransaction();
+        ApplicationSettings::set('test_key', 'committed inner');
+        DB::commit();
+
+        Cache::forever(config('application-settings.cache.key'), collect([
+            (object) ['key' => 'test_key', 'value' => 'original'],
+        ]));
+        expect(Cache::has(config('application-settings.cache.key')))->toBeTrue();
+        expect(ApplicationSettings::get('test_key'))->toBe('committed inner');
+        expect(Cache::has(config('application-settings.cache.key')))->toBeTrue();
+
+        DB::commit();
+    } finally {
+        DB::rollBack(0);
+    }
+
+    expect(Cache::has(config('application-settings.cache.key')))->toBeFalse();
+    expect(ApplicationSettings::get('test_key'))->toBe('committed inner');
+});
+
+it('does not run cache invalidation callbacks from rolled-back savepoints', function () {
+    ApplicationSettings::set('test_key', 'original');
+    DB::beginTransaction();
+
+    try {
+        DB::beginTransaction();
+        ApplicationSettings::set('test_key', 'rolled back');
+        DB::rollBack();
+
+        Cache::forever(config('application-settings.cache.key'), collect([
+            (object) ['key' => 'test_key', 'value' => 'original'],
+        ]));
+        DB::commit();
+    } finally {
+        DB::rollBack(0);
+    }
+
+    expect(Cache::has(config('application-settings.cache.key')))->toBeTrue();
+    expect(ApplicationSettings::get('test_key'))->toBe('original');
 });
 
 it('discards unsaved values after a failed insert or update', function (string $key) {

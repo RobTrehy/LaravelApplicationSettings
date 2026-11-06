@@ -37,7 +37,7 @@ class ApplicationSettings
      */
     protected static function settingsLoaded()
     {
-        if (self::$hasLoaded) {
+        if (self::$hasLoaded && DB::connection()->transactionLevel() === 0) {
             return;
         }
         self::getSettings();
@@ -51,11 +51,16 @@ class ApplicationSettings
         $keyColumn = config('application-settings.database.key');
         $valueColumn = config('application-settings.database.value');
 
-        $settings = Cache::rememberForever(config('application-settings.cache.key'), function () use ($keyColumn, $valueColumn) {
+        $inTransaction = DB::connection()->transactionLevel() > 0;
+        $load = function () use ($keyColumn, $valueColumn) {
             return DB::table(config('application-settings.database.table'))
                 ->select([$keyColumn, $valueColumn])
                 ->get();
-        });
+        };
+
+        $settings = $inTransaction
+            ? $load()
+            : Cache::rememberForever(config('application-settings.cache.key'), $load);
 
         $data = [];
         foreach ($settings as $setting) {
@@ -63,7 +68,8 @@ class ApplicationSettings
         }
 
         self::$settings = collect($data);
-        self::$hasLoaded = true;
+        // Transactional snapshots must not survive a commit or rollback.
+        self::$hasLoaded = ! $inTransaction;
     }
 
     /**
@@ -203,7 +209,19 @@ class ApplicationSettings
      */
     protected static function resetCache()
     {
-        Cache::forget(config('application-settings.cache.key'));
-        self::$hasLoaded = false;
+        $cache = Cache::store();
+        $key = config('application-settings.cache.key');
+
+        self::refresh();
+        $cache->forget($key);
+
+        $connection = DB::connection();
+        if ($connection->transactionLevel() > 0) {
+            // Another process may cache the old committed rows before this commit.
+            $connection->afterCommit(static function () use ($cache, $key): void {
+                self::refresh();
+                $cache->forget($key);
+            });
+        }
     }
 }
