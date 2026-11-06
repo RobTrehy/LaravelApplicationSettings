@@ -27,6 +27,46 @@ it('can set and get a setting', function () {
     expect($value)->toBe('test_value');
 });
 
+it('discards unsaved values after a failed insert or update', function (string $key) {
+    DB::table('settings')->insert(['key' => 'existing', 'value' => 'persisted']);
+    ApplicationSettings::all();
+
+    expect(fn () => ApplicationSettings::set($key, null))->toThrow(QueryException::class);
+
+    expect(ApplicationSettings::get('existing'))->toBe('persisted');
+    expect(ApplicationSettings::has('new_key'))->toBeFalse();
+    expect(DB::table('settings')->get(['key', 'value'])->map(fn ($row) => (array) $row)->all())
+        ->toBe([['key' => 'existing', 'value' => 'persisted']]);
+
+    ApplicationSettings::set($key, 'retried');
+
+    expect(ApplicationSettings::get($key))->toBe('retried');
+    expect(DB::table('settings')->where('key', $key)->value('value'))->toBe('retried');
+})->with(['existing', 'new_key']);
+
+it('restores persisted settings after a failed deletion', function () {
+    DB::table('settings')->insert(['key' => 'existing', 'value' => 'persisted']);
+    expect(ApplicationSettings::get('existing'))->toBe('persisted');
+
+    $table = config('application-settings.database.table');
+    config()->set('application-settings.database.table', 'missing_settings_table');
+
+    try {
+        expect(fn () => ApplicationSettings::delete('existing'))->toThrow(QueryException::class);
+    } finally {
+        config()->set('application-settings.database.table', $table);
+    }
+
+    expect(ApplicationSettings::get('existing'))->toBe('persisted');
+    expect(ApplicationSettings::has('existing'))->toBeTrue();
+    expect(DB::table($table)->where('key', 'existing')->value('value'))->toBe('persisted');
+
+    ApplicationSettings::delete('existing');
+
+    expect(ApplicationSettings::has('existing'))->toBeFalse();
+    expect(DB::table($table)->where('key', 'existing')->exists())->toBeFalse();
+});
+
 it('refreshes lazily without invalidating the shared cache', function () {
     DB::table('settings')->insert(['key' => 'test_key', 'value' => 'original']);
     expect(ApplicationSettings::get('test_key'))->toBe('original');

@@ -4,6 +4,7 @@ namespace RobTrehy\LaravelApplicationSettings;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Class ApplicationSettings
@@ -109,7 +110,14 @@ class ApplicationSettings
     {
         self::settingsLoaded();
         self::$settings->put($key, $value);
-        self::save($key);
+
+        try {
+            self::save($key);
+        } catch (Throwable $exception) {
+            self::refresh();
+
+            throw $exception;
+        }
     }
 
     /**
@@ -151,14 +159,21 @@ class ApplicationSettings
     public static function delete(string $key)
     {
         self::settingsLoaded();
-        if (self::has($key)) {
-            self::$settings->pull($key);
-            DB::table(config('application-settings.database.table'))
-                ->where(config('application-settings.database.key'), $key)
-                ->delete();
-        }
 
-        self::resetCache();
+        try {
+            if (self::has($key)) {
+                self::$settings->pull($key);
+                DB::table(config('application-settings.database.table'))
+                    ->where(config('application-settings.database.key'), $key)
+                    ->delete();
+            }
+
+            self::resetCache();
+        } catch (Throwable $exception) {
+            self::refresh();
+
+            throw $exception;
+        }
     }
 
     /**
