@@ -1,8 +1,8 @@
 # Laravel Application Settings
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/robtrehy/laravel-application-settings.svg?style=flat-square)](https://packagist.org/packages/robtrehy/laravel-application-settings)
-[![GitHub Tests Action Status](https://github.com/robtrehy/laravel-application-settings/actions/workflows/run-tests.yml/badge.svg)](https://github.com/robtrehy/laravel-application-settings/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://github.com/robtrehy/laravel-application-settings/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/robtrehy/laravel-application-settings/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![GitHub Tests Action Status](https://github.com/robtrehy/LaravelApplicationSettings/actions/workflows/run-tests.yml/badge.svg)](https://github.com/robtrehy/LaravelApplicationSettings/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://github.com/robtrehy/LaravelApplicationSettings/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/robtrehy/LaravelApplicationSettings/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/robtrehy/laravel-application-settings.svg?style=flat-square)](https://packagist.org/packages/robtrehy/laravel-application-settings)
 
 This is a package for Laravel that can be used to store and access settings for your application.
