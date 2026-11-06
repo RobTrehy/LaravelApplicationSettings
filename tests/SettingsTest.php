@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,21 @@ it('can set and get a setting', function () {
     $value = ApplicationSettings::get('test_key');
 
     expect($value)->toBe('test_value');
+});
+
+it('can retry loading settings after a database failure', function () {
+    $table = config('application-settings.database.table');
+    DB::table($table)->insert(['key' => 'test_key', 'value' => 'test_value']);
+
+    config()->set('application-settings.database.table', 'missing_settings_table');
+
+    try {
+        expect(fn () => ApplicationSettings::get('test_key'))->toThrow(QueryException::class);
+    } finally {
+        config()->set('application-settings.database.table', $table);
+    }
+
+    expect(ApplicationSettings::get('test_key'))->toBe('test_value');
 });
 
 it('can set and get multiple settings', function () {

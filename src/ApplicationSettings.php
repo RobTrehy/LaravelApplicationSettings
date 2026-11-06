@@ -47,8 +47,6 @@ class ApplicationSettings
      */
     protected static function getSettings()
     {
-        self::$hasLoaded = true;
-
         $settings = Cache::rememberForever(config('application-settings.cache.key'), function () {
             return DB::table(config('application-settings.database.table'))
                 ->select([
@@ -65,6 +63,7 @@ class ApplicationSettings
         }
 
         self::$settings = collect($data);
+        self::$hasLoaded = true;
     }
 
     /**
