@@ -158,15 +158,10 @@ class ApplicationSettings
      */
     public static function delete(string $key)
     {
-        self::settingsLoaded();
-
         try {
-            if (self::has($key)) {
-                self::$settings->pull($key);
-                DB::table(config('application-settings.database.table'))
-                    ->where(config('application-settings.database.key'), $key)
-                    ->delete();
-            }
+            DB::table(config('application-settings.database.table'))
+                ->where(config('application-settings.database.key'), $key)
+                ->delete();
 
             self::resetCache();
         } catch (Throwable $exception) {

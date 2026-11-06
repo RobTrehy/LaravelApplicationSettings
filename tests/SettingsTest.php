@@ -226,6 +226,36 @@ it('can delete a setting', function () {
     expect($value)->toBeFalse();
 });
 
+it('deletes settings created after the local snapshot was loaded', function () {
+    expect(ApplicationSettings::has('external'))->toBeFalse();
+
+    DB::table('settings')->insert(['key' => 'external', 'value' => 'created elsewhere']);
+
+    ApplicationSettings::delete('external');
+
+    expect(DB::table('settings')->where('key', 'external')->exists())->toBeFalse();
+    expect(Cache::has(config('application-settings.cache.key')))->toBeFalse();
+    expect(ApplicationSettings::has('external'))->toBeFalse();
+});
+
+it('deletes settings without loading the settings table first', function (string $key) {
+    DB::table('settings')->insert(['key' => 'existing', 'value' => 'persisted']);
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    try {
+        expect(ApplicationSettings::delete($key))->toBeNull();
+        $queries = DB::getQueryLog();
+        expect($queries)->toHaveCount(1);
+        expect(strtolower($queries[0]['query']))->toStartWith('delete ');
+    } finally {
+        DB::disableQueryLog();
+        DB::flushQueryLog();
+    }
+
+    expect(ApplicationSettings::has($key))->toBeFalse();
+})->with(['existing', 'missing']);
+
 it('persists a setting with two queries regardless of the number of settings', function (int $count, string $key) {
     DB::table('settings')->insert(array_map(
         fn (int $index) => ['key' => 'key_'.$index, 'value' => 'original'],
