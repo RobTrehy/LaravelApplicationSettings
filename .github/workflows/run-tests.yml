@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '**.php'
+      - '**.php.stub'
       - '.github/workflows/run-tests.yml'
       - 'phpunit.xml.dist'
       - 'composer.json'
@@ -11,6 +12,7 @@ on:
   pull_request:
     paths:
       - '**.php'
+      - '**.php.stub'
       - '.github/workflows/run-tests.yml'
       - 'phpunit.xml.dist'
       - 'composer.json'
