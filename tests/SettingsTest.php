@@ -1,9 +1,12 @@
 <?php
 
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use RobTrehy\LaravelApplicationSettings\ApplicationSettings;
 
 uses(RefreshDatabase::class);
@@ -24,6 +27,65 @@ it('can set and get a setting', function () {
     expect($value)->toBe('test_value');
 });
 
+it('refreshes lazily without invalidating the shared cache', function () {
+    DB::table('settings')->insert(['key' => 'test_key', 'value' => 'original']);
+    expect(ApplicationSettings::get('test_key'))->toBe('original');
+
+    // Simulate another process publishing a newer cached snapshot.
+    Cache::forever(config('application-settings.cache.key'), collect([
+        (object) ['key' => 'test_key', 'value' => 'external'],
+    ]));
+    expect(ApplicationSettings::get('test_key'))->toBe('original');
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    try {
+        ApplicationSettings::refresh();
+        expect(Cache::has(config('application-settings.cache.key')))->toBeTrue();
+        expect(ApplicationSettings::get('test_key'))->toBe('external');
+        expect(DB::getQueryLog())->toBeEmpty();
+    } finally {
+        DB::disableQueryLog();
+        DB::flushQueryLog();
+    }
+});
+
+it('reloads settings at worker lifecycle boundaries', function (string $event) {
+    $payload = [];
+    if ($event === JobProcessing::class) {
+        $job = Mockery::mock(Job::class);
+        $job->shouldReceive('payload')->andReturn([]);
+        $payload = [new JobProcessing('testing', $job)];
+    }
+
+    DB::table('settings')->insert(['key' => 'test_key', 'value' => 'original']);
+    expect(ApplicationSettings::get('test_key'))->toBe('original');
+
+    // Simulate another process updating the database and invalidating the cache.
+    DB::table('settings')->where('key', 'test_key')->update(['value' => 'external']);
+    Cache::forget(config('application-settings.cache.key'));
+    expect(ApplicationSettings::get('test_key'))->toBe('original');
+
+    Event::dispatch($event, $payload);
+
+    // Resetting is lazy: dispatching the event has not repopulated the cache.
+    expect(Cache::has(config('application-settings.cache.key')))->toBeFalse();
+    expect(ApplicationSettings::get('test_key'))->toBe('external');
+
+    DB::table('settings')->where('key', 'test_key')->update(['value' => 'later']);
+    Cache::forget(config('application-settings.cache.key'));
+    expect(ApplicationSettings::get('test_key'))->toBe('external');
+
+    Event::dispatch($event, $payload);
+    expect(ApplicationSettings::get('test_key'))->toBe('later');
+})->with([
+    JobProcessing::class,
+    'Laravel\Octane\Events\RequestReceived',
+    'Laravel\Octane\Events\TaskReceived',
+    'Laravel\Octane\Events\TickReceived',
+]);
+
 it('can retry loading settings after a database failure', function () {
     $table = config('application-settings.database.table');
     DB::table($table)->insert(['key' => 'test_key', 'value' => 'test_value']);
@@ -31,7 +93,7 @@ it('can retry loading settings after a database failure', function () {
     config()->set('application-settings.database.table', 'missing_settings_table');
 
     try {
-        expect(fn () => ApplicationSettings::get('test_key'))->toThrow(QueryException::class);
+        expect(fn() => ApplicationSettings::get('test_key'))->toThrow(QueryException::class);
     } finally {
         config()->set('application-settings.database.table', $table);
     }
@@ -85,7 +147,7 @@ it('can delete a setting', function () {
 
 it('persists a setting with two queries regardless of the number of settings', function (int $count, string $key) {
     DB::table('settings')->insert(array_map(
-        fn (int $index) => ['key' => 'key_'.$index, 'value' => 'original'],
+        fn(int $index) => ['key' => 'key_' . $index, 'value' => 'original'],
         range(1, $count),
     ));
 

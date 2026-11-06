@@ -102,6 +102,18 @@ ApplicationSettings::delete(string [setting]);
 ```
 There will be no return from this call.
 
+### Refresh settings in long-running processes
+
+The package discards its in-process settings before each queue job and each Octane request, task, or tick. The next access reloads settings from Laravel's cache, or the database on a cache miss. Repeated reads within the same operation still use the in-process settings.
+
+In custom long-running commands, call this between operations:
+
+```php
+ApplicationSettings::refresh();
+```
+
+This method clears only the in-process settings and reloads lazily on the next access. It does not invalidate the shared cache. Changes made through `set()` and `delete()` continue to invalidate the shared cache automatically. If you change the database directly, also forget the configured cache key.
+
 ## Changelog
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
 

@@ -15,7 +15,7 @@ class ApplicationSettings
     /**
      * The cache of the Applications Settings
      *
-     * @var object
+     * @var object|null
      */
     protected static $settings;
 
@@ -133,6 +133,15 @@ class ApplicationSettings
         self::settingsLoaded();
 
         return self::$settings->toArray();
+    }
+
+    /**
+     * Discard in-process settings so the next access reloads from the shared cache.
+     */
+    public static function refresh(): void
+    {
+        self::$settings = null;
+        self::$hasLoaded = false;
     }
 
     /**
