@@ -35,7 +35,7 @@ This will add the table defined in your configuration file to your database.
 Open `config/application-settings.php` to adjust the packages configuration. 
 
 If this file doesn't exist, run 
-`php artisan vendor:public --provider="RobTrehy\LaravelApplicationSettings\ApplicationSettingsServiceProvider" --tag="config"` 
+`php artisan vendor:publish --tag="application-settings-config"` 
 to create the default configuration file.
 
 Set `table`, `key`, and `value` to match your requirements.
