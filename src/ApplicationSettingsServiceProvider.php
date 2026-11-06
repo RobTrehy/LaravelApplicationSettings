@@ -12,13 +12,12 @@ class ApplicationSettingsServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-application-settings')
             ->hasConfigFile()
-            ->hasViews()
             ->hasMigration('create_settings_table');
     }
 
     public function packageRegistered(): void
     {
-        $this->app->singleton('application-settings', fn () => new ApplicationSettings);
+        $this->app->singleton('application-settings', fn() => new ApplicationSettings);
 
         $this->app->alias('application-settings', ApplicationSettings::class);
     }
