@@ -2,6 +2,11 @@
 
 All notable changes to `robtrehy/laravel-application-settings` will be documented in this file.
 
+## 4.0.0 - 2025-04-18
+- Added support for Laravel 12
+- Dropped support for Laravel 10
+- Dropped support for Laravel 9
+
 ## 3.0.0 - 2024-03-18
 - Added support for Laravel 11
 
